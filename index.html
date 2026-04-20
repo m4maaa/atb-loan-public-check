@@ -12,14 +12,14 @@
       <header class="app-header">
         <div>
           <div class="eyebrow">ATB Loan Public Check</div>
-          <h1>ตรวจสอบการกู้ อทบ. เบื้องต้น</h1>
+          <h1>ตรวจสอบการกู้ อทบ.</h1>
         </div>
         <button id="resetBtn" class="reset-btn" type="button">รีเซ็ต</button>
       </header>
 
       <section class="section-box">
         <h2>ข้อมูลเงินเดือน</h2>
-        <div class="grid grid-4">
+        <div class="grid grid-4 salary-top-grid">
           <label class="field">
             <span>ระดับ</span>
             <select id="salaryLevel"></select>
@@ -32,17 +32,20 @@
             <span>เงินเดือน</span>
             <input id="salaryAmount" type="text" readonly />
           </label>
-          <div class="field empty-cell"></div>
+          <label class="field">
+            <span>เดือน</span>
+            <input id="latestMonth" type="text" readonly />
+          </label>
         </div>
 
         <div class="grid grid-3">
           <label class="field">
             <span>รวมรับ</span>
-            <input id="totalIncome" type="text" inputmode="decimal" value="0.0" />
+            <input id="totalIncome" type="text" inputmode="decimal" autocomplete="off" />
           </label>
           <label class="field">
             <span>รวมหัก</span>
-            <input id="totalDeductions" type="text" inputmode="decimal" value="0.0" />
+            <input id="totalDeductions" type="text" inputmode="decimal" autocomplete="off" />
           </label>
           <label class="field">
             <span>คงเหลือรับ</span>
@@ -53,26 +56,19 @@
 
       <section class="section-box">
         <h2>ขออนุมัติกู้</h2>
-        <div class="grid grid-4">
+        <div class="grid loan-grid">
           <label class="field">
             <span>เงินฝาก</span>
-            <input id="depositAmount" type="text" inputmode="decimal" value="0.0" />
+            <input id="depositAmount" type="text" inputmode="decimal" autocomplete="off" />
           </label>
-          <label class="field">
+          <label class="field field-wide">
             <span>กู้เกินเงินฝาก</span>
             <select id="overDepositMode"></select>
-          </label>
-          <label class="field">
-            <span>กู้เกินเงินฝาก (คำนวณ)</span>
-            <input id="overDepositAmount" type="text" readonly />
           </label>
           <label class="field">
             <span>รวมกู้</span>
             <input id="totalLoanAmount" type="text" readonly />
           </label>
-        </div>
-
-        <div class="grid grid-2-1">
           <label class="field">
             <span>จำนวนงวด</span>
             <select id="termMonths"></select>
@@ -83,26 +79,32 @@
           </label>
         </div>
 
-        <div class="debt-toggle-row">
-          <label class="debt-toggle">
-            <span>หนี้เดิม</span>
-            <input id="hasOldDebt" type="checkbox" />
+        <div class="grid grid-2 loan-sub-grid">
+          <label class="field">
+            <span>กู้เกินเงินฝาก (คำนวณ)</span>
+            <input id="overDepositAmount" type="text" readonly />
           </label>
+          <div class="debt-toggle-wrap">
+            <label class="debt-toggle">
+              <span>กู้ทับหนี้เดิม</span>
+              <input id="hasOldDebt" type="checkbox" />
+            </label>
+          </div>
         </div>
 
         <div id="oldDebtSection" class="old-debt-section hidden">
           <div class="grid grid-3">
             <label class="field">
               <span>ยอดขอกู้</span>
-              <input id="oldDebtRequested" type="text" inputmode="decimal" value="0.0" />
+              <input id="oldDebtRequested" type="text" inputmode="decimal" autocomplete="off" />
             </label>
             <label class="field">
               <span>ยอดปัจจุบัน</span>
-              <input id="oldDebtCurrent" type="text" inputmode="decimal" value="0.0" />
+              <input id="oldDebtCurrent" type="text" inputmode="decimal" autocomplete="off" />
             </label>
             <label class="field">
               <span>ยอดผ่อนต่อเดือน</span>
-              <input id="oldDebtInstallment" type="text" inputmode="decimal" value="0.0" />
+              <input id="oldDebtInstallment" type="text" inputmode="decimal" autocomplete="off" />
             </label>
           </div>
           <div class="grid grid-1">
