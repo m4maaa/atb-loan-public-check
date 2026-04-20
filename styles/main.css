@@ -2,6 +2,8 @@
   box-sizing: border-box;
 }
 
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&display=swap");
+
 :root {
   --bg: #f4f5f8;
   --card: #ffffff;
@@ -14,8 +16,8 @@
   --green-line: #60c487;
   --yellow-line: #efc46a;
   --red-line: #de7a7a;
-  --red-accent-soft: rgba(144, 28, 47, 0.05);
-  --red-accent-line: rgba(144, 28, 47, 0.15);
+  --red-accent-soft: rgba(144, 28, 47, 0.07);
+  --red-accent-line: rgba(144, 28, 47, 0.18);
   --shadow: 0 14px 32px rgba(16, 42, 67, 0.08);
 }
 
@@ -25,7 +27,7 @@ body {
   padding: 0;
   background: linear-gradient(180deg, #f7f8fb 0%, #f1f4f8 100%);
   color: var(--text);
-  font-family: Tahoma, "Segoe UI", sans-serif;
+  font-family: "Kanit", Tahoma, "Segoe UI", sans-serif;
 }
 
 body {
@@ -75,23 +77,24 @@ body {
 
 .eyebrow {
   color: #55789e;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   margin-bottom: 4px;
 }
 
 h1 {
   margin: 0;
-  font-size: 34px;
+  font-size: 32px;
   line-height: 1.12;
   color: #102a43;
 }
 
 h2 {
   margin: 0 0 14px;
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.1;
   color: #16324f;
+  text-align: center;
 }
 
 .reset-btn {
@@ -99,10 +102,11 @@ h2 {
   background: #ffffff;
   border-radius: 14px;
   padding: 11px 16px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #1d3557;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .reset-btn:hover {
@@ -147,7 +151,7 @@ h2 {
 }
 
 .loan-grid-top {
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: 1fr 1.8fr;
   align-items: end;
 }
 
@@ -168,7 +172,7 @@ h2 {
 }
 
 .field > span {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--muted);
 }
@@ -182,8 +186,9 @@ h2 {
   background: var(--input-bg);
   color: #14304a;
   padding: 10px 12px;
-  font-size: 18px;
+  font-size: 17px;
   outline: none;
+  font-family: inherit;
 }
 
 .field input::placeholder {
@@ -200,6 +205,7 @@ h2 {
   background: var(--readonly-bg);
   color: #425a73;
   font-weight: 700;
+  text-align: center;
 }
 
 .field-wide {
@@ -219,7 +225,7 @@ h2 {
   border-radius: 14px;
   padding: 11px 14px;
   background: #fff;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--muted);
 }
@@ -243,9 +249,8 @@ h2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .loan-grid-top,
   .loan-grid-bottom {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -275,11 +280,11 @@ h2 {
   }
 
   h1 {
-    font-size: 28px;
+    font-size: 30px;
   }
 
   h2 {
-    font-size: 20px;
+    font-size: 18px;
     margin-bottom: 12px;
   }
 
@@ -295,13 +300,13 @@ h2 {
   }
 
   .field > span {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .field input,
   .field select {
     min-height: 46px;
-    font-size: 17px;
+    font-size: 16px;
     border-radius: 12px;
   }
 
