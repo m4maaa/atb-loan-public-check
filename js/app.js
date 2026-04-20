@@ -99,24 +99,34 @@
     return months[now.getMonth()] + ' ' + year;
   }
 
-  function stepSortKey(step) {
-    const [basePart, suffix] = String(step).split('/');
-    const numeric = Number(basePart);
-    const safeNumeric = Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER;
-    const suffixRank = suffix === 'เยียวยา' ? 1 : 0;
-    return { safeNumeric, suffixRank };
-  }
+function stepSortKey(step) {
+  const isRelief = String(step).includes('/เยียวยา');
+  const numeric = Number(String(step).replace('/เยียวยา', ''));
+  return {
+    isRelief,
+    numeric: Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER,
+  };
+}
 
-  function getSortedSteps(level) {
-    const levelData = (window.SALARY_DATA || {})[level] || {};
-    return Object.keys(levelData).sort((a, b) => {
-      const keyA = stepSortKey(a);
-      const keyB = stepSortKey(b);
-      if (keyA.safeNumeric !== keyB.safeNumeric) return keyA.safeNumeric - keyB.safeNumeric;
-      if (keyA.suffixRank !== keyB.suffixRank) return keyA.suffixRank - keyB.suffixRank;
-      return String(a).localeCompare(String(b), 'th');
-    });
-  }
+function getSortedSteps(level) {
+  const levelData = (window.SALARY_DATA || {})[level] || {};
+  return Object.keys(levelData).sort((a, b) => {
+    const keyA = stepSortKey(a);
+    const keyB = stepSortKey(b);
+
+    /* ขั้นปกติมาก่อน ขั้นเยียวยาทีหลัง */
+    if (keyA.isRelief !== keyB.isRelief) {
+      return keyA.isRelief ? 1 : -1;
+    }
+
+    /* เรียงตัวเลขจากน้อยไปมาก */
+    if (keyA.numeric !== keyB.numeric) {
+      return keyA.numeric - keyB.numeric;
+    }
+
+    return String(a).localeCompare(String(b), 'th');
+  });
+}
 
   function populateLevels() {
     elements.salaryLevel.innerHTML = LEVELS.map((level) => `<option value="${level}">${level}</option>`).join('');
