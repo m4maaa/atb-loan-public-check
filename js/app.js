@@ -3,9 +3,9 @@
   const LEVELS = ['ป.1', 'ป.2', 'ป.3', 'น.1', 'น.2', 'น.3'];
   const OVER_DEPOSIT_OPTIONS = [
     { value: 'SELF_ONLY', label: 'กู้เฉพาะเงินตัวเอง' },
-    { value: 'OVER_1K_100K', label: 'เกินเงินฝากตั้งแต่ 1,000 - 100,000 บาท' },
-    { value: 'OVER_101K_300K', label: 'เกินเงินฝากตั้งแต่ 101,000 - 300,000 บาท' },
-    { value: 'OVER_301K_500K', label: 'เกินเงินฝากตั้งแต่ 301,000 - 500,000 บาท' },
+    { value: 'OVER_1K_100K', label: 'เกินเงินฝากตั้งแต่ 1,000 แต่ไม่เกิน 100,000 บาท' },
+    { value: 'OVER_101K_300K', label: 'เกินเงินฝากตั้งแต่ 101,000 แต่ไม่เกิน 300,000 บาท' },
+    { value: 'OVER_301K_500K', label: 'เกินเงินฝากตั้งแต่ 301,000 แต่ไม่เกิน 500,000 บาท' },
     { value: 'DOUBLE_DEPOSIT_MAX_500K', label: '2 เท่าของเงินฝาก แต่ไม่เกิน 500,000 บาท' }
   ];
 
@@ -15,6 +15,7 @@
     salaryLevel: document.getElementById('salaryLevel'),
     salaryStep: document.getElementById('salaryStep'),
     salaryAmount: document.getElementById('salaryAmount'),
+    latestMonth: document.getElementById('latestMonth'),
     totalIncome: document.getElementById('totalIncome'),
     totalDeductions: document.getElementById('totalDeductions'),
     remainingIncome: document.getElementById('remainingIncome'),
@@ -38,33 +39,46 @@
   let isPristine = true;
 
   function formatMoney(value) {
-    const num = Number.isFinite(value) ? value : 0;
+    if (!Number.isFinite(value)) return '';
     return new Intl.NumberFormat('en-US', {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1
-    }).format(num);
+    }).format(value);
   }
 
   function parseMoney(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-    const cleaned = String(value ?? '')
-      .replace(/,/g, '')
-      .replace(/[^\d.-]/g, '');
+    const cleaned = String(value ?? '').replace(/,/g, '').replace(/[^\d.-]/g, '');
     const num = Number(cleaned);
     return Number.isFinite(num) ? num : 0;
   }
 
-  function setMoneyValue(input, value) {
+  function hasValue(input) {
+    return String(input.value ?? '').trim() !== '';
+  }
+
+  function setComputedValue(input, value, showWhenPristine = false) {
+    if (isPristine && !showWhenPristine) {
+      input.value = '';
+      return;
+    }
     input.value = formatMoney(value);
   }
 
   function bindMoneyInput(input) {
     input.addEventListener('focus', () => {
-      input.value = String(parseMoney(input.value) || 0);
+      const raw = String(input.value ?? '').trim();
+      if (!raw || raw === '0' || raw === '0.0') {
+        input.value = '';
+        return;
+      }
+      const parsed = parseMoney(raw);
+      input.value = parsed ? String(parsed) : '';
     });
 
     input.addEventListener('blur', () => {
-      setMoneyValue(input, parseMoney(input.value));
+      const parsed = parseMoney(input.value);
+      input.value = input.value.trim() === '' ? '' : formatMoney(parsed);
       markDirtyAndRecalculate();
     });
 
@@ -72,37 +86,35 @@
   }
 
   function monthlyPayment(principal, annualRate, months) {
-    const p = parseMoney(principal);
-    const n = Number(months);
-
+    const p = Number(principal) || 0;
+    const n = Number(months) || 0;
     if (p <= 0 || n <= 0) return 0;
-
     const r = annualRate / 100 / 12;
     if (r === 0) return p / n;
-
     return (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
   }
 
+  function getLatestMonthText() {
+    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const now = new Date();
+    const year = (now.getFullYear() + 543).toString().slice(-2);
+    return months[now.getMonth()] + ' ' + year;
+  }
+
   function populateLevels() {
-    elements.salaryLevel.innerHTML = LEVELS
-      .map((level) => '<option value="' + level + '">' + level + '</option>')
-      .join('');
+    elements.salaryLevel.innerHTML = LEVELS.map((level) => `<option value="${level}">${level}</option>`).join('');
   }
 
   function populateOverDepositModes() {
     elements.overDepositMode.innerHTML = OVER_DEPOSIT_OPTIONS
-      .map((opt) => '<option value="' + opt.value + '">' + opt.label + '</option>')
+      .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
       .join('');
   }
 
   function populateSteps(level, preferredStep) {
     const levelData = (window.SALARY_DATA || {})[level] || {};
     const steps = Object.keys(levelData);
-
-    elements.salaryStep.innerHTML = steps
-      .map((step) => '<option value="' + step + '">' + step + '</option>')
-      .join('');
-
+    elements.salaryStep.innerHTML = steps.map((step) => `<option value="${step}">${step}</option>`).join('');
     if (preferredStep && steps.includes(preferredStep)) {
       elements.salaryStep.value = preferredStep;
     }
@@ -113,7 +125,14 @@
     return Number.isFinite(value) ? value : 0;
   }
 
+  function normalizeDepositForLoan(deposit) {
+    const value = parseMoney(deposit);
+    if (value < 1000) return 0;
+    return Math.floor(value / 1000) * 1000;
+  }
+
   function computeOverDeposit(mode, deposit) {
+    const normalizedDeposit = normalizeDepositForLoan(deposit);
     switch (mode) {
       case 'SELF_ONLY':
         return 0;
@@ -124,7 +143,7 @@
       case 'OVER_301K_500K':
         return 500000;
       case 'DOUBLE_DEPOSIT_MAX_500K':
-        return Math.min(parseMoney(deposit), 500000);
+        return Math.min(normalizedDeposit, 500000);
       default:
         return 0;
     }
@@ -148,21 +167,18 @@
   }
 
   function getAllowedTerms(totalLoan) {
-    const amount = parseMoney(totalLoan);
-    if (amount <= 0) return [24, 48];
-    if (amount < 150000) return [24, 48];
-    if (amount <= 290000) return [48, 60, 72, 84, 96];
+    const amount = Number(totalLoan) || 0;
+    if (amount <= 0 || amount <= 140000) return [24, 48];
+    if (amount >= 150000 && amount <= 290000) return [48, 60, 72, 84, 96];
     return [48, 60, 72, 84, 96, 120];
   }
 
   function renderTermOptions(totalLoan) {
     const allowed = getAllowedTerms(totalLoan);
     const current = Number(elements.termMonths.value);
-
     elements.termMonths.innerHTML = allowed
-      .map((months) => '<option value="' + months + '">' + months + ' งวด / ' + (months / 12) + ' ปี</option>')
+      .map((months) => `<option value="${months}">${months} งวด / ${months / 12} ปี</option>`)
       .join('');
-
     if (allowed.includes(current)) {
       elements.termMonths.value = String(current);
     } else {
@@ -172,41 +188,34 @@
 
   function updateStatusCard(remainingAfterLoan, oneThird) {
     elements.appCard.classList.remove('status-green', 'status-yellow', 'status-red');
-
     if (isPristine) {
       elements.appCard.classList.add('status-green');
       return;
     }
-
     const passOneThird = remainingAfterLoan > oneThird;
     const passFiveThousand = remainingAfterLoan > 5000;
-
     if (passOneThird && passFiveThousand) {
       elements.appCard.classList.add('status-green');
       return;
     }
-
     if (passOneThird || passFiveThousand) {
       elements.appCard.classList.add('status-yellow');
       return;
     }
-
     elements.appCard.classList.add('status-red');
   }
 
   function recalculate() {
-    const level = elements.salaryLevel.value;
-    const step = elements.salaryStep.value;
-    const salary = getSalary(level, step);
-
+    const salary = getSalary(elements.salaryLevel.value, elements.salaryStep.value);
     const totalIncome = parseMoney(elements.totalIncome.value);
     const totalDeductions = parseMoney(elements.totalDeductions.value);
     const remainingIncome = totalIncome - totalDeductions;
 
-    const depositAmount = parseMoney(elements.depositAmount.value);
+    const rawDeposit = parseMoney(elements.depositAmount.value);
+    const normalizedDeposit = normalizeDepositForLoan(rawDeposit);
     const overDepositMode = elements.overDepositMode.value;
-    const overDepositAmount = computeOverDeposit(overDepositMode, depositAmount);
-    const totalLoanAmount = depositAmount + overDepositAmount;
+    const overDepositAmount = computeOverDeposit(overDepositMode, rawDeposit);
+    const totalLoanAmount = normalizedDeposit + overDepositAmount;
 
     renderTermOptions(totalLoanAmount);
 
@@ -222,18 +231,18 @@
     const remainingAfterLoan = remainingIncome - monthlyInstallment + oldDebtInstallment;
     const guarantorText = getGuarantorText(overDepositMode);
 
-    setMoneyValue(elements.salaryAmount, salary);
-    setMoneyValue(elements.remainingIncome, remainingIncome);
-    setMoneyValue(elements.overDepositAmount, overDepositAmount);
-    setMoneyValue(elements.totalLoanAmount, totalLoanAmount);
-    setMoneyValue(elements.monthlyPayment, monthlyInstallment);
-    setMoneyValue(elements.differenceAmount, differenceAmount);
-    setMoneyValue(elements.oneThirdAmount, oneThirdAmount);
-    setMoneyValue(elements.remainingAfterLoan, remainingAfterLoan);
-    elements.guarantorCount.value = guarantorText;
+    elements.salaryAmount.value = formatMoney(salary);
+    elements.latestMonth.value = getLatestMonthText();
+    setComputedValue(elements.remainingIncome, remainingIncome);
+    setComputedValue(elements.overDepositAmount, overDepositAmount);
+    setComputedValue(elements.totalLoanAmount, totalLoanAmount);
+    setComputedValue(elements.monthlyPayment, monthlyInstallment);
+    setComputedValue(elements.differenceAmount, differenceAmount);
+    setComputedValue(elements.oneThirdAmount, oneThirdAmount);
+    setComputedValue(elements.remainingAfterLoan, remainingAfterLoan);
+    elements.guarantorCount.value = isPristine ? '' : guarantorText;
 
     elements.oldDebtSection.classList.toggle('hidden', !hasOldDebt);
-
     updateStatusCard(remainingAfterLoan, oneThirdAmount);
   }
 
@@ -242,11 +251,15 @@
     recalculate();
   }
 
+  function clearEditable(input) {
+    input.value = '';
+  }
+
   function resetAll() {
     isPristine = true;
-
     elements.salaryLevel.value = LEVELS[0];
-    populateSteps(LEVELS[0], Object.keys((window.SALARY_DATA || {})[LEVELS[0]] || {})[0]);
+    const firstSteps = Object.keys((window.SALARY_DATA || {})[LEVELS[0]] || {});
+    populateSteps(LEVELS[0], firstSteps[0]);
 
     [
       elements.totalIncome,
@@ -255,11 +268,23 @@
       elements.oldDebtRequested,
       elements.oldDebtCurrent,
       elements.oldDebtInstallment
-    ].forEach((input) => setMoneyValue(input, 0));
+    ].forEach(clearEditable);
 
     elements.overDepositMode.value = 'SELF_ONLY';
     elements.hasOldDebt.checked = false;
+    elements.oldDebtSection.classList.add('hidden');
+    elements.guarantorCount.value = '';
+    [
+      elements.remainingIncome,
+      elements.overDepositAmount,
+      elements.totalLoanAmount,
+      elements.monthlyPayment,
+      elements.differenceAmount,
+      elements.oneThirdAmount,
+      elements.remainingAfterLoan
+    ].forEach((input) => { input.value = ''; });
 
+    renderTermOptions(0);
     recalculate();
   }
 
@@ -268,7 +293,6 @@
       populateSteps(elements.salaryLevel.value);
       markDirtyAndRecalculate();
     });
-
     elements.salaryStep.addEventListener('change', markDirtyAndRecalculate);
     elements.overDepositMode.addEventListener('change', markDirtyAndRecalculate);
     elements.termMonths.addEventListener('change', markDirtyAndRecalculate);
@@ -288,9 +312,9 @@
   function init() {
     populateLevels();
     populateOverDepositModes();
-    populateSteps(LEVELS[0]);
-    bindEvents();
+    elements.latestMonth.value = getLatestMonthText();
     resetAll();
+    bindEvents();
   }
 
   init();
