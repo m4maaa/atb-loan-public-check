@@ -1,5 +1,6 @@
 (function () {
   const ANNUAL_RATE = 4.75;
+  const STORAGE_KEY = 'atb-loan-public-check.draft';
   const LEVELS = ['ป.1', 'ป.2', 'ป.3', 'น.1', 'น.2', 'น.3'];
   const OVER_DEPOSIT_OPTIONS = [
     { value: 'SELF_ONLY', label: 'กู้เฉพาะเงินตัวเอง' },
@@ -21,7 +22,6 @@
     remainingIncome: document.getElementById('remainingIncome'),
     depositAmount: document.getElementById('depositAmount'),
     overDepositMode: document.getElementById('overDepositMode'),
-    overDepositAmount: document.getElementById('overDepositAmount'),
     totalLoanAmount: document.getElementById('totalLoanAmount'),
     termMonths: document.getElementById('termMonths'),
     monthlyPayment: document.getElementById('monthlyPayment'),
@@ -48,13 +48,10 @@
 
   function parseMoney(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-    const cleaned = String(value ?? '').replace(/,/g, '').replace(/[^\d.-]/g, '');
+    const cleaned = String(value ?? '').replace(/,/g, '').replace(/[^
+\d.-]/g, '');
     const num = Number(cleaned);
     return Number.isFinite(num) ? num : 0;
-  }
-
-  function hasValue(input) {
-    return String(input.value ?? '').trim() !== '';
   }
 
   function setComputedValue(input, value, showWhenPristine = false) {
@@ -68,17 +65,19 @@
   function bindMoneyInput(input) {
     input.addEventListener('focus', () => {
       const raw = String(input.value ?? '').trim();
-      if (!raw || raw === '0' || raw === '0.0') {
-        input.value = '';
-        return;
-      }
+      if (!raw) return;
       const parsed = parseMoney(raw);
       input.value = parsed ? String(parsed) : '';
+      setTimeout(() => input.select(), 0);
     });
 
     input.addEventListener('blur', () => {
-      const parsed = parseMoney(input.value);
-      input.value = input.value.trim() === '' ? '' : formatMoney(parsed);
+      const trimmed = String(input.value ?? '').trim();
+      if (!trimmed) {
+        input.value = '';
+      } else {
+        input.value = formatMoney(parseMoney(trimmed));
+      }
       markDirtyAndRecalculate();
     });
 
@@ -101,6 +100,25 @@
     return months[now.getMonth()] + ' ' + year;
   }
 
+  function stepSortKey(step) {
+    const [basePart, suffix] = String(step).split('/');
+    const numeric = Number(basePart);
+    const safeNumeric = Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER;
+    const suffixRank = suffix === 'เยียวยา' ? 1 : 0;
+    return { safeNumeric, suffixRank };
+  }
+
+  function getSortedSteps(level) {
+    const levelData = (window.SALARY_DATA || {})[level] || {};
+    return Object.keys(levelData).sort((a, b) => {
+      const keyA = stepSortKey(a);
+      const keyB = stepSortKey(b);
+      if (keyA.safeNumeric !== keyB.safeNumeric) return keyA.safeNumeric - keyB.safeNumeric;
+      if (keyA.suffixRank !== keyB.suffixRank) return keyA.suffixRank - keyB.suffixRank;
+      return String(a).localeCompare(String(b), 'th');
+    });
+  }
+
   function populateLevels() {
     elements.salaryLevel.innerHTML = LEVELS.map((level) => `<option value="${level}">${level}</option>`).join('');
   }
@@ -112,8 +130,7 @@
   }
 
   function populateSteps(level, preferredStep) {
-    const levelData = (window.SALARY_DATA || {})[level] || {};
-    const steps = Object.keys(levelData);
+    const steps = getSortedSteps(level);
     elements.salaryStep.innerHTML = steps.map((step) => `<option value="${step}">${step}</option>`).join('');
     if (preferredStep && steps.includes(preferredStep)) {
       elements.salaryStep.value = preferredStep;
@@ -205,6 +222,69 @@
     elements.appCard.classList.add('status-red');
   }
 
+  function getDraftData() {
+    return {
+      isPristine,
+      salaryLevel: elements.salaryLevel.value,
+      salaryStep: elements.salaryStep.value,
+      totalIncome: elements.totalIncome.value,
+      totalDeductions: elements.totalDeductions.value,
+      depositAmount: elements.depositAmount.value,
+      overDepositMode: elements.overDepositMode.value,
+      termMonths: elements.termMonths.value,
+      hasOldDebt: elements.hasOldDebt.checked,
+      oldDebtRequested: elements.oldDebtRequested.value,
+      oldDebtCurrent: elements.oldDebtCurrent.value,
+      oldDebtInstallment: elements.oldDebtInstallment.value
+    };
+  }
+
+  function saveDraft() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(getDraftData()));
+    } catch (error) {
+      console.warn('saveDraft failed', error);
+    }
+  }
+
+  function restoreInputValue(input, value) {
+    input.value = value || '';
+  }
+
+  function loadDraft() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return false;
+      const draft = JSON.parse(raw);
+      if (!draft || typeof draft !== 'object') return false;
+
+      elements.salaryLevel.value = LEVELS.includes(draft.salaryLevel) ? draft.salaryLevel : LEVELS[0];
+      populateSteps(elements.salaryLevel.value, draft.salaryStep);
+      restoreInputValue(elements.totalIncome, draft.totalIncome);
+      restoreInputValue(elements.totalDeductions, draft.totalDeductions);
+      restoreInputValue(elements.depositAmount, draft.depositAmount);
+      elements.overDepositMode.value = draft.overDepositMode || 'SELF_ONLY';
+      elements.hasOldDebt.checked = Boolean(draft.hasOldDebt);
+      restoreInputValue(elements.oldDebtRequested, draft.oldDebtRequested);
+      restoreInputValue(elements.oldDebtCurrent, draft.oldDebtCurrent);
+      restoreInputValue(elements.oldDebtInstallment, draft.oldDebtInstallment);
+      isPristine = Boolean(draft.isPristine);
+      recalculate();
+
+      if (draft.termMonths) {
+        const allowed = getAllowedTerms(parseMoney(elements.totalLoanAmount.value));
+        if (allowed.includes(Number(draft.termMonths))) {
+          elements.termMonths.value = String(draft.termMonths);
+          recalculate();
+        }
+      }
+      return true;
+    } catch (error) {
+      console.warn('loadDraft failed', error);
+      return false;
+    }
+  }
+
   function recalculate() {
     const salary = getSalary(elements.salaryLevel.value, elements.salaryStep.value);
     const totalIncome = parseMoney(elements.totalIncome.value);
@@ -234,7 +314,6 @@
     elements.salaryAmount.value = formatMoney(salary);
     elements.latestMonth.value = getLatestMonthText();
     setComputedValue(elements.remainingIncome, remainingIncome);
-    setComputedValue(elements.overDepositAmount, overDepositAmount);
     setComputedValue(elements.totalLoanAmount, totalLoanAmount);
     setComputedValue(elements.monthlyPayment, monthlyInstallment);
     setComputedValue(elements.differenceAmount, differenceAmount);
@@ -244,6 +323,7 @@
 
     elements.oldDebtSection.classList.toggle('hidden', !hasOldDebt);
     updateStatusCard(remainingAfterLoan, oneThirdAmount);
+    saveDraft();
   }
 
   function markDirtyAndRecalculate() {
@@ -258,7 +338,7 @@
   function resetAll() {
     isPristine = true;
     elements.salaryLevel.value = LEVELS[0];
-    const firstSteps = Object.keys((window.SALARY_DATA || {})[LEVELS[0]] || {});
+    const firstSteps = getSortedSteps(LEVELS[0]);
     populateSteps(LEVELS[0], firstSteps[0]);
 
     [
@@ -276,7 +356,6 @@
     elements.guarantorCount.value = '';
     [
       elements.remainingIncome,
-      elements.overDepositAmount,
       elements.totalLoanAmount,
       elements.monthlyPayment,
       elements.differenceAmount,
@@ -285,6 +364,7 @@
     ].forEach((input) => { input.value = ''; });
 
     renderTermOptions(0);
+    localStorage.removeItem(STORAGE_KEY);
     recalculate();
   }
 
@@ -313,7 +393,10 @@
     populateLevels();
     populateOverDepositModes();
     elements.latestMonth.value = getLatestMonthText();
-    resetAll();
+    const restored = loadDraft();
+    if (!restored) {
+      resetAll();
+    }
     bindEvents();
   }
 
