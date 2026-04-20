@@ -41,11 +41,11 @@
         <div class="grid grid-3">
           <label class="field">
             <span>รวมรับ</span>
-            <input id="totalIncome" type="text" inputmode="decimal" autocomplete="off" />
+            <input id="totalIncome" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
           </label>
           <label class="field">
             <span>รวมหัก</span>
-            <input id="totalDeductions" type="text" inputmode="decimal" autocomplete="off" />
+            <input id="totalDeductions" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
           </label>
           <label class="field">
             <span>คงเหลือรับ</span>
@@ -54,17 +54,21 @@
         </div>
       </section>
 
-      <section class="section-box">
+      <section class="section-box section-loan">
         <h2>ขออนุมัติกู้</h2>
-        <div class="grid loan-grid">
+
+        <div class="grid loan-grid-top">
           <label class="field">
             <span>เงินฝาก</span>
-            <input id="depositAmount" type="text" inputmode="decimal" autocomplete="off" />
+            <input id="depositAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
           </label>
           <label class="field field-wide">
             <span>กู้เกินเงินฝาก</span>
             <select id="overDepositMode"></select>
           </label>
+        </div>
+
+        <div class="grid loan-grid-bottom">
           <label class="field">
             <span>รวมกู้</span>
             <input id="totalLoanAmount" type="text" readonly />
@@ -79,11 +83,7 @@
           </label>
         </div>
 
-        <div class="grid grid-2 loan-sub-grid">
-          <label class="field">
-            <span>กู้เกินเงินฝาก (คำนวณ)</span>
-            <input id="overDepositAmount" type="text" readonly />
-          </label>
+        <div class="grid grid-1 loan-sub-grid">
           <div class="debt-toggle-wrap">
             <label class="debt-toggle">
               <span>กู้ทับหนี้เดิม</span>
@@ -96,15 +96,15 @@
           <div class="grid grid-3">
             <label class="field">
               <span>ยอดขอกู้</span>
-              <input id="oldDebtRequested" type="text" inputmode="decimal" autocomplete="off" />
+              <input id="oldDebtRequested" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
             <label class="field">
               <span>ยอดปัจจุบัน</span>
-              <input id="oldDebtCurrent" type="text" inputmode="decimal" autocomplete="off" />
+              <input id="oldDebtCurrent" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
             <label class="field">
               <span>ยอดผ่อนต่อเดือน</span>
-              <input id="oldDebtInstallment" type="text" inputmode="decimal" autocomplete="off" />
+              <input id="oldDebtInstallment" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
           </div>
           <div class="grid grid-1">
