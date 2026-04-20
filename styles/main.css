@@ -3,7 +3,7 @@
 }
 
 :root {
-  --bg: #f3f6fb;
+  --bg: #f4f5f8;
   --card: #ffffff;
   --line: #cfd7e3;
   --line-strong: #b8c5d6;
@@ -14,6 +14,8 @@
   --green-line: #60c487;
   --yellow-line: #efc46a;
   --red-line: #de7a7a;
+  --red-accent-soft: rgba(144, 28, 47, 0.05);
+  --red-accent-line: rgba(144, 28, 47, 0.15);
   --shadow: 0 14px 32px rgba(16, 42, 67, 0.08);
 }
 
@@ -21,7 +23,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: linear-gradient(180deg, #f7f8fb 0%, #f1f4f8 100%);
   color: var(--text);
   font-family: Tahoma, "Segoe UI", sans-serif;
 }
@@ -37,7 +39,7 @@ body {
 }
 
 .app-card {
-  background: var(--card);
+  background: linear-gradient(180deg, #ffffff 0%, #fffdfd 100%);
   border: 3px solid var(--green-line);
   border-radius: 22px;
   box-shadow: var(--shadow);
@@ -57,7 +59,10 @@ body {
 
 .app-card.status-red {
   border-color: var(--red-line);
-  box-shadow: 0 14px 32px rgba(222, 122, 122, 0.2);
+  box-shadow: 0 14px 32px rgba(222, 122, 122, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(255, 250, 250, 1) 100%),
+    var(--red-accent-soft);
 }
 
 .app-header {
@@ -108,8 +113,12 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 18px;
-  background: #fbfcfe;
+  background: linear-gradient(180deg, #fbfcfe 0%, #fffefe 100%);
   margin-bottom: 16px;
+}
+
+.app-card.status-red .section-box {
+  border-color: var(--red-accent-line);
 }
 
 .grid {
@@ -133,13 +142,23 @@ h2 {
   grid-template-columns: 1fr;
 }
 
-.loan-grid {
-  grid-template-columns: 1fr 1.35fr 0.9fr 0.95fr 1fr;
+.salary-top-grid {
+  align-items: end;
+}
+
+.loan-grid-top {
+  grid-template-columns: 1fr 2fr;
+  align-items: end;
+}
+
+.loan-grid-bottom {
+  grid-template-columns: 1fr 1fr 1.15fr;
+  align-items: end;
+  margin-top: 12px;
 }
 
 .loan-sub-grid {
   margin-top: 12px;
-  align-items: end;
 }
 
 .field {
@@ -167,6 +186,10 @@ h2 {
   outline: none;
 }
 
+.field input::placeholder {
+  color: #9ca9b8;
+}
+
 .field input:focus,
 .field select:focus {
   border-color: #85a6ca;
@@ -180,7 +203,7 @@ h2 {
 }
 
 .field-wide {
-  grid-column: span 2;
+  grid-column: span 1;
 }
 
 .debt-toggle-wrap {
@@ -215,12 +238,14 @@ h2 {
 }
 
 @media (max-width: 1100px) {
-  .loan-grid {
+  .salary-top-grid,
+  .grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .field-wide {
-    grid-column: span 2;
+  .loan-grid-top,
+  .loan-grid-bottom {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -250,7 +275,7 @@ h2 {
   }
 
   h1 {
-    font-size: 26px;
+    font-size: 28px;
   }
 
   h2 {
@@ -261,14 +286,12 @@ h2 {
   .grid-4,
   .grid-3,
   .grid-2,
-  .loan-grid,
+  .salary-top-grid,
+  .loan-grid-top,
+  .loan-grid-bottom,
   .loan-sub-grid {
     grid-template-columns: 1fr;
     gap: 10px;
-  }
-
-  .field-wide {
-    grid-column: span 1;
   }
 
   .field > span {
