@@ -48,8 +48,7 @@
 
   function parseMoney(value) {
     if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-    const cleaned = String(value ?? '').replace(/,/g, '').replace(/[^
-\d.-]/g, '');
+    const cleaned = String(value ?? '').replace(/,/g, '').replace(/[^\d.-]/g, '');
     const num = Number(cleaned);
     return Number.isFinite(num) ? num : 0;
   }
@@ -125,7 +124,7 @@
 
   function populateOverDepositModes() {
     elements.overDepositMode.innerHTML = OVER_DEPOSIT_OPTIONS
-      .map((opt) => `<option value="${opt.value}">${opt.label}</option>`)
+      .map((item) => `<option value="${item.value}">${item.label}</option>`)
       .join('');
   }
 
@@ -138,21 +137,19 @@
   }
 
   function getSalary(level, step) {
-    const value = window.SALARY_DATA?.[level]?.[step];
-    return Number.isFinite(value) ? value : 0;
+    const levelData = (window.SALARY_DATA || {})[level] || {};
+    return Number(levelData[step] || 0);
   }
 
-  function normalizeDepositForLoan(deposit) {
-    const value = parseMoney(deposit);
+  function normalizeDepositForLoan(amount) {
+    const value = parseMoney(amount);
     if (value < 1000) return 0;
     return Math.floor(value / 1000) * 1000;
   }
 
-  function computeOverDeposit(mode, deposit) {
-    const normalizedDeposit = normalizeDepositForLoan(deposit);
+  function computeOverDeposit(mode, rawDeposit) {
+    const deposit = normalizeDepositForLoan(rawDeposit);
     switch (mode) {
-      case 'SELF_ONLY':
-        return 0;
       case 'OVER_1K_100K':
         return 100000;
       case 'OVER_101K_300K':
@@ -160,41 +157,44 @@
       case 'OVER_301K_500K':
         return 500000;
       case 'DOUBLE_DEPOSIT_MAX_500K':
-        return Math.min(normalizedDeposit, 500000);
+        return Math.min(deposit, 500000);
+      case 'SELF_ONLY':
       default:
         return 0;
     }
   }
 
+  function getAllowedTerms(totalLoanAmount) {
+    const loan = parseMoney(totalLoanAmount);
+    if (loan <= 140000) return [24, 48];
+    if (loan <= 290000) return [48, 60, 72, 84, 96];
+    return [48, 60, 72, 84, 96, 120];
+  }
+
+  function formatTermLabel(months) {
+    return `${months} งวด / ${months / 12} ปี`;
+  }
+
   function getGuarantorText(mode) {
     switch (mode) {
-      case 'SELF_ONLY':
-        return '-';
       case 'OVER_1K_100K':
         return '1 คน';
       case 'OVER_101K_300K':
+      case 'DOUBLE_DEPOSIT_MAX_500K':
         return '2 คน';
       case 'OVER_301K_500K':
         return '3 คน';
-      case 'DOUBLE_DEPOSIT_MAX_500K':
-        return '2 คน';
+      case 'SELF_ONLY':
       default:
         return '-';
     }
   }
 
-  function getAllowedTerms(totalLoan) {
-    const amount = Number(totalLoan) || 0;
-    if (amount <= 0 || amount <= 140000) return [24, 48];
-    if (amount >= 150000 && amount <= 290000) return [48, 60, 72, 84, 96];
-    return [48, 60, 72, 84, 96, 120];
-  }
-
-  function renderTermOptions(totalLoan) {
-    const allowed = getAllowedTerms(totalLoan);
-    const current = Number(elements.termMonths.value);
+  function renderTermOptions(totalLoanAmount) {
+    const allowed = getAllowedTerms(totalLoanAmount);
+    const current = Number(elements.termMonths.value || 0);
     elements.termMonths.innerHTML = allowed
-      .map((months) => `<option value="${months}">${months} งวด / ${months / 12} ปี</option>`)
+      .map((months) => `<option value="${months}">${formatTermLabel(months)}</option>`)
       .join('');
     if (allowed.includes(current)) {
       elements.termMonths.value = String(current);
