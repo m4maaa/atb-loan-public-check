@@ -33,7 +33,7 @@
             <input id="salaryAmount" type="text" readonly />
           </label>
           <label class="field">
-            <span>เดือน</span>
+            <span>อ้างอิงตามเดือน</span>
             <input id="latestMonth" type="text" readonly />
           </label>
         </div>
@@ -59,7 +59,7 @@
 
         <div class="grid loan-grid-top">
           <label class="field">
-            <span>เงินฝาก</span>
+            <span>กู้เกินเงินฝาก</span>
             <input id="depositAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
           </label>
           <label class="field field-wide">
@@ -70,15 +70,15 @@
 
         <div class="grid loan-grid-bottom">
           <label class="field">
-            <span>รวมกู้</span>
+            <span>รวมยอดเงินที่ขออนุมัติกู้</span>
             <input id="totalLoanAmount" type="text" readonly />
           </label>
           <label class="field">
-            <span>จำนวนงวด</span>
+            <span>จำนวนงวดผ่อนชำระ</span>
             <select id="termMonths"></select>
           </label>
           <label class="field">
-            <span>ผ่อนต่อเดือน</span>
+            <span>ยอดผ่อนต่อเดือน</span>
             <input id="monthlyPayment" type="text" readonly />
           </label>
         </div>
@@ -95,15 +95,15 @@
         <div id="oldDebtSection" class="old-debt-section hidden">
           <div class="grid grid-3">
             <label class="field">
-              <span>ยอดขอกู้</span>
+              <span>ยอดที่ขออนุมัติกู้ (ครั้งก่อน)</span>
               <input id="oldDebtRequested" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
             <label class="field">
-              <span>ยอดปัจจุบัน</span>
+              <span>ยอดคงเหลือปัจจุบัน</span>
               <input id="oldDebtCurrent" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
             <label class="field">
-              <span>ยอดผ่อนต่อเดือน</span>
+              <span>ยอดผ่อนต่อเดือน (ตามสลิปเงินเดือน)</span>
               <input id="oldDebtInstallment" type="text" inputmode="decimal" autocomplete="off" placeholder="0.0" />
             </label>
           </div>
@@ -120,11 +120,11 @@
         <h2>หลักเกณฑ์</h2>
         <div class="grid grid-3">
           <label class="field">
-            <span>ยอด 1 ใน 3</span>
+            <span>ยอด 1 ใน 3 (ต้องไม่ต่ำกว่า)</span>
             <input id="oneThirdAmount" type="text" readonly />
           </label>
           <label class="field">
-            <span>เหลือรับหลังกู้</span>
+            <span>เหลือรับรายเดือนหลังกู้</span>
             <input id="remainingAfterLoan" type="text" readonly />
           </label>
           <label class="field">
