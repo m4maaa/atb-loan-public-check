@@ -41,7 +41,7 @@
           </label>
           <label class="field">
             <span>เงินฝากที่สามารถกู้ได้</span>
-            <input id="depositLoanAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" readonly />
+            <input id="depositLoanAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
           </label>
           <label class="field field-wide">
             <span>ประเภทการกู้</span>
@@ -49,15 +49,7 @@
           </label>
         </div>
 
-        <div class="grid grid-1 loan-sub-grid">
-          <div class="debt-toggle-wrap">
-            <label class="debt-toggle">
-              <span>แก้ไขยอดเงินฝากที่ต้องการกู้</span>
-              <input id="canEditDepositLoan" type="checkbox" />
-            </label>
-          </div>
-          <div id="depositLoanHint" class="hint-text hidden"></div>
-        </div>
+        <div id="depositLoanHint" class="hint-text hidden"></div>
 
         <div class="grid loan-grid-bottom">
           <label class="field"><span>รวมยอดเงินที่ขออนุมัติกู้</span><input id="totalLoanAmount" type="text" readonly /></label>
@@ -87,12 +79,8 @@
           </div>
         </div>
         <div id="otherDebtSection" class="old-debt-section hidden">
-          <div class="grid grid-3">
-            <label class="field"><span>สถาบันเจ้าหนี้</span><select id="otherDebtInstitution"><option value="สหกรณ์">สหกรณ์</option><option value="ธนาคารออมสิน">ธนาคารออมสิน</option><option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option><option value="อื่น ๆ">อื่น ๆ</option></select></label>
-            <label class="field"><span>ยอดหนี้คงเหลือโดยประมาณ</span><input id="otherDebtCurrent" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" /></label>
-            <label class="field"><span>ยอดผ่อนต่อเดือนที่ต้องการปิด</span><input id="otherDebtInstallment" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" /></label>
-          </div>
-          <div class="grid grid-2">
+          <div id="otherDebtList" class="other-debt-list"></div>
+          <div class="grid grid-2 other-debt-summary">
             <label class="field"><span>เงินคงเหลือหลังปิดหนี้อื่นโดยประมาณ</span><input id="otherDebtNetAmount" type="text" readonly /></label>
             <label class="field"><span>เหลือรับส่วนต่างจากหนี้อื่น/เดือน</span><input id="otherDebtMonthlyDiff" type="text" readonly /></label>
           </div>
@@ -101,10 +89,9 @@
 
       <section class="section-box">
         <h2>หลักเกณฑ์</h2>
-        <div class="grid grid-4">
+        <div class="grid grid-3">
           <label class="field"><span>ยอด 1 ใน 3 (ต้องไม่ต่ำกว่า)</span><input id="oneThirdAmount" type="text" readonly /></label>
           <label class="field"><span>เหลือรับรายเดือนหลังกู้</span><input id="remainingAfterLoan" type="text" readonly /></label>
-          <label class="field"><span>คงเหลือรับจริงต่อเดือน</span><input id="monthlyNetAfterLoan" type="text" readonly /></label>
           <label class="field"><span>จำนวนคนค้ำ</span><input id="guarantorCount" type="text" readonly /></label>
         </div>
       </section>

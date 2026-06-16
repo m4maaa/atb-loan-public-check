@@ -36,6 +36,11 @@ h2 { margin: 0 0 14px; font-size: 20px; line-height: 1.1; color: #16324f; text-a
 .debt-toggle { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 11px 14px; background: #fff; font-size: 16px; font-weight: 700; color: var(--muted); }
 .debt-toggle input { width: 22px; height: 22px; }
 .old-debt-section { margin-top: 12px; }
+.other-debt-list { display: grid; gap: 12px; }
+.other-debt-item { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #ffffff; }
+.other-debt-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.other-debt-summary { margin-top: 12px; }
+.other-debt-next { margin-top: 0; }
 .hint-text { color: #8a4b12; background: #fff8e8; border: 1px solid #f0d49c; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 600; }
 .hidden { display: none !important; }
 @media (max-width: 1100px) { .salary-top-grid, .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .loan-grid-top { grid-template-columns: repeat(2, minmax(0, 1fr)); } .loan-grid-bottom { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

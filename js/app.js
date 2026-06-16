@@ -1,6 +1,7 @@
 (function () {
   const ANNUAL_RATE = 4.75;
   const STORAGE_KEY = 'atb-loan-public-check.draft';
+  const MAX_OTHER_DEBTS = 5;
   const LEVELS = ['ป.1', 'ป.2', 'ป.3', 'น.1', 'น.2', 'น.3'];
   const OVER_DEPOSIT_OPTIONS = [
     { value: 'SELF_ONLY', label: 'กู้เฉพาะเงินตัวเอง' },
@@ -22,7 +23,6 @@
     remainingIncome: document.getElementById('remainingIncome'),
     depositAmount: document.getElementById('depositAmount'),
     depositLoanAmount: document.getElementById('depositLoanAmount'),
-    canEditDepositLoan: document.getElementById('canEditDepositLoan'),
     depositLoanHint: document.getElementById('depositLoanHint'),
     overDepositMode: document.getElementById('overDepositMode'),
     totalLoanAmount: document.getElementById('totalLoanAmount'),
@@ -36,18 +36,16 @@
     differenceAmount: document.getElementById('differenceAmount'),
     hasOtherDebt: document.getElementById('hasOtherDebt'),
     otherDebtSection: document.getElementById('otherDebtSection'),
-    otherDebtInstitution: document.getElementById('otherDebtInstitution'),
-    otherDebtCurrent: document.getElementById('otherDebtCurrent'),
-    otherDebtInstallment: document.getElementById('otherDebtInstallment'),
+    otherDebtList: document.getElementById('otherDebtList'),
     otherDebtNetAmount: document.getElementById('otherDebtNetAmount'),
     otherDebtMonthlyDiff: document.getElementById('otherDebtMonthlyDiff'),
     oneThirdAmount: document.getElementById('oneThirdAmount'),
     remainingAfterLoan: document.getElementById('remainingAfterLoan'),
-    monthlyNetAfterLoan: document.getElementById('monthlyNetAfterLoan'),
     guarantorCount: document.getElementById('guarantorCount')
   };
 
   let isPristine = true;
+  let otherDebtCount = 1;
 
   function formatMoney(value) {
     if (!Number.isFinite(value)) return '';
@@ -153,46 +151,48 @@
     return Math.floor(value / 1000) * 1000;
   }
 
-  function getDepositLoanAmount(rawDeposit) {
-    const eligibleDeposit = normalizeDepositForLoan(rawDeposit);
-    if (!elements.canEditDepositLoan.checked) return eligibleDeposit;
 
-    const customDeposit = normalizeDepositForLoan(elements.depositLoanAmount.value);
-    if (customDeposit <= 0) return 0;
-    return Math.min(customDeposit, eligibleDeposit);
+  function clampDepositLoanAmount(rawValue, eligibleDeposit) {
+    const typed = parseMoney(rawValue);
+    if (eligibleDeposit < 1000) return 0;
+    if (typed <= 0) return eligibleDeposit;
+    const atLeastMinimum = Math.max(typed, 1000);
+    return Math.min(normalizeDepositForLoan(atLeastMinimum), eligibleDeposit);
   }
 
   function syncDepositLoanInput(rawDeposit) {
     const eligibleDeposit = normalizeDepositForLoan(rawDeposit);
-    const editable = elements.canEditDepositLoan.checked;
-    elements.depositLoanAmount.readOnly = !editable;
+    const hasValue = String(elements.depositLoanAmount.value || '').trim();
+    const finalValue = clampDepositLoanAmount(elements.depositLoanAmount.value, eligibleDeposit);
+    const typed = parseMoney(elements.depositLoanAmount.value);
+    const isFocused = document.activeElement === elements.depositLoanAmount;
 
-    if (!editable) {
-      setComputedValue(elements.depositLoanAmount, eligibleDeposit);
+    if (!hasValue && !isPristine) {
+      elements.depositLoanAmount.value = formatMoney(eligibleDeposit);
       elements.depositLoanHint.classList.add('hidden');
       elements.depositLoanHint.textContent = '';
       return eligibleDeposit;
     }
 
-    const typed = parseMoney(elements.depositLoanAmount.value);
-    const normalizedTyped = normalizeDepositForLoan(typed);
-    const finalValue = Math.min(normalizedTyped, eligibleDeposit);
-    elements.depositLoanHint.classList.remove('hidden');
+    if (!isFocused && hasValue) elements.depositLoanAmount.value = formatMoney(finalValue);
 
     if (eligibleDeposit < 1000) {
-      elements.depositLoanHint.textContent = 'เงินฝากที่สามารถกู้ได้ต้องตั้งแต่ 1,000.00 บาทขึ้นไป';
+      elements.depositLoanHint.classList.remove('hidden');
+      elements.depositLoanHint.textContent = "เงินฝากที่สามารถกู้ได้ต้องตั้งแต่ 1,000.00 บาทขึ้นไป";
     } else if (typed > eligibleDeposit) {
-      elements.depositLoanHint.textContent = `ยอดที่แก้ไขต้องไม่เกินเงินฝากที่สามารถกู้ได้ ${formatMoney(eligibleDeposit)} บาท`;
-    } else if (typed > 0 && typed !== normalizedTyped) {
-      elements.depositLoanHint.textContent = `ระบบใช้ยอดเต็มพันตามระเบียบ คือ ${formatMoney(finalValue)} บาท`;
+      elements.depositLoanHint.classList.remove('hidden');
+      elements.depositLoanHint.textContent = 'ยอดที่แก้ไขต้องไม่เกินเงินฝากที่สามารถกู้ได้ ' + formatMoney(eligibleDeposit) + ' บาท';
+    } else if (hasValue && typed > 0 && typed < 1000) {
+      elements.depositLoanHint.classList.remove('hidden');
+      elements.depositLoanHint.textContent = "ระบบปรับยอดเงินฝากที่สามารถกู้ได้เป็นขั้นต่ำ 1,000.00 บาท";
+    } else if (hasValue && typed !== finalValue) {
+      elements.depositLoanHint.classList.remove('hidden');
+      elements.depositLoanHint.textContent = 'ระบบใช้ยอดเต็มพันตามระเบียบ คือ ' + formatMoney(finalValue) + ' บาท';
     } else {
-      elements.depositLoanHint.textContent = 'แก้ไขได้เฉพาะยอดเต็มพัน และต้องไม่ต่ำกว่า 1,000.00 บาท';
+      elements.depositLoanHint.classList.add('hidden');
+      elements.depositLoanHint.textContent = '';
     }
 
-    if (!String(elements.depositLoanAmount.value || '').trim() && !isPristine) {
-      elements.depositLoanAmount.value = formatMoney(eligibleDeposit);
-      return eligibleDeposit;
-    }
     return finalValue;
   }
 
@@ -230,6 +230,64 @@
     }
   }
 
+  function getOtherDebtRows() {
+    return Array.from(elements.otherDebtList.querySelectorAll('.other-debt-item'));
+  }
+
+  function getOtherDebtEntries() {
+    return getOtherDebtRows().map((row) => ({
+      institution: row.querySelector('[data-field="institution"]')?.value || "สหกรณ์",
+      current: parseMoney(row.querySelector('[data-field="current"]')?.value),
+      installment: parseMoney(row.querySelector('[data-field="installment"]')?.value)
+    }));
+  }
+
+  function collectOtherDebtDraft() {
+    return getOtherDebtRows().map((row) => ({
+      institution: row.querySelector('[data-field="institution"]')?.value || "สหกรณ์",
+      current: row.querySelector('[data-field="current"]')?.value || '',
+      installment: row.querySelector('[data-field="installment"]')?.value || ''
+    }));
+  }
+
+  function renderOtherDebtRows(entries = collectOtherDebtDraft()) {
+    const count = Math.min(Math.max(otherDebtCount, 1), MAX_OTHER_DEBTS);
+    const rows = [];
+    for (let index = 0; index < count; index += 1) {
+      const item = entries[index] || {};
+      rows.push([
+        '<div class="other-debt-item" data-index="' + index + '">',
+        '<div class="other-debt-title">' + "หนี้อื่นรายการที่" + ' ' + (index + 1) + '</div>',
+        '<div class="grid grid-3">',
+        '<label class="field"><span>สถาบันเจ้าหนี้</span><select data-field="institution"><option value="สหกรณ์">สหกรณ์</option><option value="ธนาคารออมสิน">ธนาคารออมสิน</option><option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option><option value="อื่น ๆ">อื่น ๆ</option></select></label>',
+        '<label class="field"><span>ยอดหนี้คงเหลือโดยประมาณ</span><input data-field="current" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" /></label>',
+        '<label class="field"><span>ยอดผ่อนต่อเดือนที่ต้องการปิด</span><input data-field="installment" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" /></label>',
+        '</div>',
+        '</div>'
+      ].join(''));
+    }
+    if (count < MAX_OTHER_DEBTS) {
+      rows.push([
+        '<div class="debt-toggle-wrap other-debt-next">',
+        '<label class="debt-toggle"><span>' + "เพิ่มหนี้อื่นรายการที่" + ' ' + (count + 1) + '</span><input id="addOtherDebt" type="checkbox" /></label>',
+        '</div>'
+      ].join(''));
+    }
+    elements.otherDebtList.innerHTML = rows.join('');
+    getOtherDebtRows().forEach((row, index) => {
+      const item = entries[index] || {};
+      const institution = row.querySelector('[data-field="institution"]');
+      const current = row.querySelector('[data-field="current"]');
+      const installment = row.querySelector('[data-field="installment"]');
+      institution.value = item.institution || "สหกรณ์";
+      current.value = item.current || '';
+      installment.value = item.installment || '';
+      bindMoneyInput(current);
+      bindMoneyInput(installment);
+      institution.addEventListener('change', markDirtyAndRecalculate);
+    });
+  }
+
   function renderTermOptions(totalLoanAmount) {
     const allowed = getAllowedTerms(totalLoanAmount);
     const current = Number(elements.termMonths.value || 0);
@@ -265,7 +323,6 @@
       totalDeductions: elements.totalDeductions.value,
       depositAmount: elements.depositAmount.value,
       depositLoanAmount: elements.depositLoanAmount.value,
-      canEditDepositLoan: elements.canEditDepositLoan.checked,
       overDepositMode: elements.overDepositMode.value,
       termMonths: elements.termMonths.value,
       hasOldDebt: elements.hasOldDebt.checked,
@@ -273,9 +330,8 @@
       oldDebtCurrent: elements.oldDebtCurrent.value,
       oldDebtInstallment: elements.oldDebtInstallment.value,
       hasOtherDebt: elements.hasOtherDebt.checked,
-      otherDebtInstitution: elements.otherDebtInstitution.value,
-      otherDebtCurrent: elements.otherDebtCurrent.value,
-      otherDebtInstallment: elements.otherDebtInstallment.value
+      otherDebtCount,
+      otherDebts: collectOtherDebtDraft()
     };
   }
 
@@ -300,16 +356,18 @@
       restoreInputValue(elements.totalDeductions, draft.totalDeductions);
       restoreInputValue(elements.depositAmount, draft.depositAmount);
       restoreInputValue(elements.depositLoanAmount, draft.depositLoanAmount);
-      elements.canEditDepositLoan.checked = Boolean(draft.canEditDepositLoan);
       elements.overDepositMode.value = draft.overDepositMode || 'SELF_ONLY';
       elements.hasOldDebt.checked = Boolean(draft.hasOldDebt);
       restoreInputValue(elements.oldDebtRequested, draft.oldDebtRequested);
       restoreInputValue(elements.oldDebtCurrent, draft.oldDebtCurrent);
       restoreInputValue(elements.oldDebtInstallment, draft.oldDebtInstallment);
       elements.hasOtherDebt.checked = Boolean(draft.hasOtherDebt);
-      elements.otherDebtInstitution.value = draft.otherDebtInstitution || 'สหกรณ์';
-      restoreInputValue(elements.otherDebtCurrent, draft.otherDebtCurrent);
-      restoreInputValue(elements.otherDebtInstallment, draft.otherDebtInstallment);
+      const legacyOtherDebt = draft.otherDebtCurrent || draft.otherDebtInstallment
+        ? [{ institution: draft.otherDebtInstitution || 'สหกรณ์', current: draft.otherDebtCurrent, installment: draft.otherDebtInstallment }]
+        : null;
+      const otherDebts = Array.isArray(draft.otherDebts) ? draft.otherDebts : legacyOtherDebt;
+      otherDebtCount = Math.min(Math.max(Number(draft.otherDebtCount) || (otherDebts ? otherDebts.length : 1), 1), MAX_OTHER_DEBTS);
+      renderOtherDebtRows(otherDebts || []);
       isPristine = Boolean(draft.isPristine);
       recalculate();
       if (draft.termMonths) {
@@ -347,14 +405,14 @@
     const differenceAmount = hasOldDebt ? totalLoanAmount - oldDebtCurrent : 0;
 
     const hasOtherDebt = elements.hasOtherDebt.checked;
-    const otherDebtCurrent = hasOtherDebt ? parseMoney(elements.otherDebtCurrent.value) : 0;
-    const otherDebtInstallment = hasOtherDebt ? parseMoney(elements.otherDebtInstallment.value) : 0;
+    const otherDebtEntries = hasOtherDebt ? getOtherDebtEntries() : [];
+    const otherDebtCurrent = otherDebtEntries.reduce((sum, item) => sum + item.current, 0);
+    const otherDebtInstallment = otherDebtEntries.reduce((sum, item) => sum + item.installment, 0);
     const otherDebtNetAmount = hasOtherDebt ? totalLoanAmount - oldDebtCurrent - otherDebtCurrent : 0;
     const otherDebtMonthlyDiff = hasOtherDebt ? otherDebtInstallment - monthlyInstallment : 0;
 
     const oneThirdAmount = totalIncome / 3;
-    const remainingAfterLoan = remainingIncome - monthlyInstallment + oldDebtInstallment;
-    const monthlyNetAfterLoan = remainingIncome - monthlyInstallment + oldDebtInstallment + otherDebtInstallment;
+    const remainingAfterLoan = remainingIncome - monthlyInstallment + oldDebtInstallment + otherDebtInstallment;
     const guarantorText = getGuarantorText(overDepositMode);
 
     elements.salaryAmount.value = formatMoney(salary);
@@ -367,11 +425,10 @@
     setComputedValue(elements.otherDebtMonthlyDiff, otherDebtMonthlyDiff);
     setComputedValue(elements.oneThirdAmount, oneThirdAmount);
     setComputedValue(elements.remainingAfterLoan, remainingAfterLoan);
-    setComputedValue(elements.monthlyNetAfterLoan, monthlyNetAfterLoan);
     elements.guarantorCount.value = isPristine ? '' : guarantorText;
     elements.oldDebtSection.classList.toggle('hidden', !hasOldDebt);
     elements.otherDebtSection.classList.toggle('hidden', !hasOtherDebt);
-    updateStatusCard(monthlyNetAfterLoan, oneThirdAmount);
+    updateStatusCard(remainingAfterLoan, oneThirdAmount);
     saveDraft();
   }
 
@@ -396,15 +453,13 @@
       elements.depositLoanAmount,
       elements.oldDebtRequested,
       elements.oldDebtCurrent,
-      elements.oldDebtInstallment,
-      elements.otherDebtCurrent,
-      elements.otherDebtInstallment
+      elements.oldDebtInstallment
     ].forEach(clearEditable);
-    elements.canEditDepositLoan.checked = false;
     elements.overDepositMode.value = 'SELF_ONLY';
     elements.hasOldDebt.checked = false;
     elements.hasOtherDebt.checked = false;
-    elements.otherDebtInstitution.value = 'สหกรณ์';
+    otherDebtCount = 1;
+    renderOtherDebtRows([]);
     elements.oldDebtSection.classList.add('hidden');
     elements.otherDebtSection.classList.add('hidden');
     elements.depositLoanHint.classList.add('hidden');
@@ -417,8 +472,7 @@
       elements.otherDebtNetAmount,
       elements.otherDebtMonthlyDiff,
       elements.oneThirdAmount,
-      elements.remainingAfterLoan,
-      elements.monthlyNetAfterLoan
+      elements.remainingAfterLoan
     ].forEach(clearEditable);
     renderTermOptions(0);
     localStorage.removeItem(STORAGE_KEY);
@@ -435,8 +489,13 @@
     elements.termMonths.addEventListener('change', markDirtyAndRecalculate);
     elements.hasOldDebt.addEventListener('change', markDirtyAndRecalculate);
     elements.hasOtherDebt.addEventListener('change', markDirtyAndRecalculate);
-    elements.canEditDepositLoan.addEventListener('change', markDirtyAndRecalculate);
-    elements.otherDebtInstitution.addEventListener('change', markDirtyAndRecalculate);
+    elements.otherDebtList.addEventListener('change', (event) => {
+      if (event.target.id === 'addOtherDebt' && event.target.checked) {
+        otherDebtCount = Math.min(otherDebtCount + 1, MAX_OTHER_DEBTS);
+        renderOtherDebtRows();
+      }
+      markDirtyAndRecalculate();
+    });
     elements.resetBtn.addEventListener('click', resetAll);
     [
       elements.totalIncome,
@@ -445,9 +504,7 @@
       elements.depositLoanAmount,
       elements.oldDebtRequested,
       elements.oldDebtCurrent,
-      elements.oldDebtInstallment,
-      elements.otherDebtCurrent,
-      elements.otherDebtInstallment
+      elements.oldDebtInstallment
     ].forEach(bindMoneyInput);
   }
 
@@ -455,6 +512,7 @@
     populateLevels();
     populateOverDepositModes();
     elements.latestMonth.value = getLatestMonthText();
+    renderOtherDebtRows([]);
     const restored = loadDraft();
     if (!restored) resetAll();
     bindEvents();
