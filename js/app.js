@@ -38,7 +38,6 @@
     otherDebtSection: document.getElementById('otherDebtSection'),
     otherDebtList: document.getElementById('otherDebtList'),
     otherDebtNetAmount: document.getElementById('otherDebtNetAmount'),
-    otherDebtMonthlyDiff: document.getElementById('otherDebtMonthlyDiff'),
     oneThirdAmount: document.getElementById('oneThirdAmount'),
     remainingAfterLoan: document.getElementById('remainingAfterLoan'),
     guarantorCount: document.getElementById('guarantorCount')
@@ -257,7 +256,10 @@
       const item = entries[index] || {};
       rows.push([
         '<div class="other-debt-item" data-index="' + index + '">',
+        '<div class="other-debt-item-header">',
         '<div class="other-debt-title">' + "หนี้อื่นรายการที่" + ' ' + (index + 1) + '</div>',
+        '<button class="other-debt-action remove-other-debt" type="button" data-action="remove" data-index="' + index + '" title="ลบรายการ" aria-label="ลบหนี้อื่นรายการที่ ' + (index + 1) + '"' + (count === 1 ? ' disabled' : '') + '>−</button>',
+        '</div>',
         '<div class="grid grid-3">',
         '<label class="field"><span>สถาบันเจ้าหนี้</span><select data-field="institution"><option value="สหกรณ์">สหกรณ์</option><option value="ธนาคารออมสิน">ธนาคารออมสิน</option><option value="ธนาคารกรุงไทย">ธนาคารกรุงไทย</option><option value="อื่น ๆ">อื่น ๆ</option></select></label>',
         '<label class="field"><span>ยอดหนี้คงเหลือโดยประมาณ</span><input data-field="current" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" /></label>',
@@ -268,8 +270,8 @@
     }
     if (count < MAX_OTHER_DEBTS) {
       rows.push([
-        '<div class="debt-toggle-wrap other-debt-next">',
-        '<label class="debt-toggle"><span>' + "เพิ่มหนี้อื่นรายการที่" + ' ' + (count + 1) + '</span><input id="addOtherDebt" type="checkbox" /></label>',
+        '<div class="other-debt-actions">',
+        '<button class="other-debt-action add-other-debt" type="button" data-action="add" title="เพิ่มรายการ" aria-label="เพิ่มหนี้อื่นรายการที่ ' + (count + 1) + '">+</button>',
         '</div>'
       ].join(''));
     }
@@ -409,7 +411,6 @@
     const otherDebtCurrent = otherDebtEntries.reduce((sum, item) => sum + item.current, 0);
     const otherDebtInstallment = otherDebtEntries.reduce((sum, item) => sum + item.installment, 0);
     const otherDebtNetAmount = hasOtherDebt ? totalLoanAmount - oldDebtCurrent - otherDebtCurrent : 0;
-    const otherDebtMonthlyDiff = hasOtherDebt ? otherDebtInstallment - monthlyInstallment : 0;
 
     const oneThirdAmount = totalIncome / 3;
     const remainingAfterLoan = remainingIncome - monthlyInstallment + oldDebtInstallment + otherDebtInstallment;
@@ -422,7 +423,6 @@
     setComputedValue(elements.monthlyPayment, monthlyInstallment);
     setComputedValue(elements.differenceAmount, differenceAmount);
     setComputedValue(elements.otherDebtNetAmount, otherDebtNetAmount);
-    setComputedValue(elements.otherDebtMonthlyDiff, otherDebtMonthlyDiff);
     setComputedValue(elements.oneThirdAmount, oneThirdAmount);
     setComputedValue(elements.remainingAfterLoan, remainingAfterLoan);
     elements.guarantorCount.value = isPristine ? '' : guarantorText;
@@ -470,7 +470,6 @@
       elements.monthlyPayment,
       elements.differenceAmount,
       elements.otherDebtNetAmount,
-      elements.otherDebtMonthlyDiff,
       elements.oneThirdAmount,
       elements.remainingAfterLoan
     ].forEach(clearEditable);
@@ -489,10 +488,17 @@
     elements.termMonths.addEventListener('change', markDirtyAndRecalculate);
     elements.hasOldDebt.addEventListener('change', markDirtyAndRecalculate);
     elements.hasOtherDebt.addEventListener('change', markDirtyAndRecalculate);
-    elements.otherDebtList.addEventListener('change', (event) => {
-      if (event.target.id === 'addOtherDebt' && event.target.checked) {
+    elements.otherDebtList.addEventListener('click', (event) => {
+      const action = event.target.closest('[data-action]');
+      if (!action) return;
+      const entries = collectOtherDebtDraft();
+      if (action.dataset.action === 'add') {
         otherDebtCount = Math.min(otherDebtCount + 1, MAX_OTHER_DEBTS);
-        renderOtherDebtRows();
+        renderOtherDebtRows(entries);
+      } else if (action.dataset.action === 'remove' && otherDebtCount > 1) {
+        entries.splice(Number(action.dataset.index), 1);
+        otherDebtCount -= 1;
+        renderOtherDebtRows(entries);
       }
       markDirtyAndRecalculate();
     });
